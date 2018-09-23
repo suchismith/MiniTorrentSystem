@@ -1,11 +1,11 @@
 CC = g++
-CFLAGS = -Wall -std=c++1z
-DEPS = commandMode.h normalmode.h filelisting.h
-OBJ = commandmode.o normalmode.o fileList.o openFileList.o
-all: openFileList
+CFLAGS = -Wall -std=c++1z -pthread 
+DEPS = tracker.h
+OBJ = tracker.o 
+all: tracker
 %.o: %.cpp $(DEPS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-openFileList: $(OBJ)
+tracker: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 

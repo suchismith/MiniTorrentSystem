@@ -1,19 +1,4 @@
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include<string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <iostream>
-#include <bits/stdc++.h>
-#include <thread>
-#include <map>
-#include <vector>
-
+#include "tracker.h"
 int count1 = 100;
 int mutlock = 0;
 char *logfile;
@@ -54,13 +39,110 @@ void handleClient(int socketid, char *ip, int port, char *clientip)
     string message;
     bzero(buffer,2048);
     int writeflag=1;
-    string receivedMsg;
+   string receivedMsg;
+
     n = recv(socketid,buffer, 2048, 0);
     if (n < 0)
             error("ERROR filename from socket");
+
     cout<<"revied"<<buffer;
         receivedMsg=buffer;
-   
+
+
+        
+    if(receivedMsg.find("remove")!=string::npos && receivedMsg!="")
+    {
+
+        receivedMsg=receivedMsg.substr(receivedMsg.find("|")+1,receivedMsg.length());
+        string hashReceived=receivedMsg.substr(0,receivedMsg.find("|"));
+        string clientInfo=receivedMsg.substr(receivedMsg.find("|")+1,receivedMsg.length());  
+        if(seedermap.find(hashReceived)!=seedermap.end())
+        {
+            set<string> clients;
+            clients=seedermap[hashReceived];
+            if(clients.find(clientInfo)!=clients.end())
+            {
+                clients.erase(clientInfo);
+            }
+        }
+
+
+    }
+    else if(receivedMsg!="")
+    {
+        string hashReceived=receivedMsg.substr(0,receivedMsg.find("|"));
+        string clientInfo=receivedMsg.substr(receivedMsg.find("|")+1,receivedMsg.length());   
+        set<string> clients;
+        FILE *fp;
+        fp = fopen(seederfile, "r");
+        if (fp == NULL)
+        {
+                    fp = fopen(seederfile, "w");
+                
+                    clients.insert(clientInfo);
+                    seedermap.insert(make_pair(hashReceived, clients));
+        
+        }
+        else
+        {
+            fp = fopen(seederfile, "r");
+            char line[128];                             
+            while (fgets(line, sizeof line, fp) != NULL) 
+            {
+    
+                string fileLine = line;
+                string hashPresent = fileLine.substr(0, fileLine.find("|"));
+
+                vector<string> seeders;
+                string test;
+                istringstream tokenStream(fileLine);
+            
+                while (getline(tokenStream, test, '|'))
+                {
+                    seeders.push_back(test);
+                }
+            
+                clients.insert(seeders[1]+"|"+seeders[2]);
+                seedermap.insert(make_pair(seeders[0], clients));
+            
+                if (seedermap.find(hashReceived) != seedermap.end()) //hash exists
+                {
+                    cout<<"hash exists";
+                    string hashname = seeders[0];
+                    auto it = seedermap.find(hashname);
+                    clients = it->second;
+                    if(clients.find(clientInfo)==clients.end())
+                    {
+                        
+                        clients.insert(clientInfo);
+                        seedermap[hashname] = clients;
+                    }
+                    else
+                    {
+                    writeflag=0;
+                    cout<<"client info exists";
+                    }    
+                }
+                else if(receivedMsg.find("remove")!=string::npos)
+    {
+
+        receivedMsg=receivedMsg.substr(receivedMsg.find("|")+1,receivedMsg.length());
+        string hashReceived=receivedMsg.substr(0,receivedMsg.find("|"));
+        string clientInfo=receivedMsg.substr(receivedMsg.find("|")+1,receivedMsg.length());  
+        if(seedermap.find(hashReceived)!=seedermap.end())
+        {
+            set<string> clients;
+            clients=seedermap[hashReceived];
+            if(clients.find(clientInfo)!=clients.end())
+            {
+                clients.erase(clientInfo);
+            }
+        }
+
+
+    }
+    else
+    {
         string hashReceived=receivedMsg.substr(0,receivedMsg.find("|"));
         string clientInfo=receivedMsg.substr(receivedMsg.find("|")+1,receivedMsg.length());   
         set<string> clients;
@@ -123,17 +205,17 @@ void handleClient(int socketid, char *ip, int port, char *clientip)
                 fclose(fp);
                 fp = fopen(seederfile, "a");
             }
-
+    
         
         
         
 
 
-
+        string finalstring="";
 
         for(auto itr=seedermap.begin();itr!=seedermap.end();itr++)
             {
-                string finalstring="";
+              
                 finalstring+=itr->first+"|";   
                 clients=itr->second;
                 string s1;    
@@ -146,11 +228,49 @@ void handleClient(int socketid, char *ip, int port, char *clientip)
 
 
             }
+            cout<<"final string is "<<finalstring;
 
             logMessage("wrriten to seederfile");
             fclose(fp);
     }
- 
+    }
+                {
+                    clients.insert(clientInfo);
+                    seedermap.insert(make_pair(hashReceived, clients));
+                }
+
+                fclose(fp);
+                fp = fopen(seederfile, "a");
+            }
+    
+        
+        
+        
+
+
+        string finalstring="";
+
+        for(auto itr=seedermap.begin();itr!=seedermap.end();itr++)
+            {
+              
+                finalstring+=itr->first+"|";   
+                clients=itr->second;
+                string s1;    
+                for(string str:clients)
+                {
+                        s1=str;   
+                }
+                finalstring+=s1;
+                fprintf(fp, "%s\n", finalstring.c_str());
+
+
+            }
+            cout<<"final string is "<<finalstring;
+
+            logMessage("wrriten to seederfile");
+            fclose(fp);
+    }
+    }
 
 }
 
@@ -175,7 +295,7 @@ void trackerConnect(string tracker_ip1)
         error("ERROR on binding");
     listen(sockfd, 5);
     clilen = sizeof(cli_addr);
-    while (1)
+   while (1)
     {
 
         newsockfd = accept(sockfd,
@@ -183,9 +303,19 @@ void trackerConnect(string tracker_ip1)
                            &clilen);
         if (newsockfd < 0)
             error("ERROR on accept");
+            /*
+          n = recv(newsockfd,buffer, 2048, 0);
+         if (n < 0)
+            error("ERROR filename from socket");
+        cout<<"revied"<<buffer;
+        bzero(buffer,sizeof(buffer));
+        cout<<"after clearing"<<buffer;
+        */
         printf("Connection accepted from %s:%d : %d\n", inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port), newsockfd);
         thread t1(handleClient, newsockfd, inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port), inet_ntoa(cli_addr.sin_addr));
         t1.detach();
+      
+        
       
     }
    
@@ -209,6 +339,6 @@ int main(int argc, char *argv[])
     int opt = 1;
 
     trackerConnect(tracker_ip1);
-
+   
     return 0;
 }

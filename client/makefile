@@ -1,11 +1,11 @@
 CC = g++
-CFLAGS = -Wall -std=c++1z
-DEPS = commandMode.h normalmode.h filelisting.h
-OBJ = commandmode.o normalmode.o fileList.o openFileList.o
-all: openFileList
+CFLAGS = -Wall -std=c++11 -lssl -lcrypto -pthread
+DEPS = client.h
+OBJ = client.o 
+all: client
 %.o: %.cpp $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC)  -c -o $@ $< $(CFLAGS)
 
-openFileList: $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+client: $(OBJ)
+	$(CC)  -o $@ $^	$(CFLAGS)
 

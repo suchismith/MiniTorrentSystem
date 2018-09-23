@@ -1,27 +1,8 @@
-#include <openssl/sha.h>
-#include <arpa/inet.h>
-#include <iostream>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <thread>
-#include <vector>
-#include <istream>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <iterator>
+#include "client.h"
 #define IP_PROTOCOL 0
 #define NET_BUF_SIZE 255
 using namespace std;
 char *logfile;
-void pingServer(int socketid, char *hash, string filename);
 void logMessage(char *message)
 {
 
@@ -46,7 +27,7 @@ void shareFile(string filename, string torrent, char *ipaddress, int port, int s
 {
 
     unsigned char digest[SHA_DIGEST_LENGTH];
-
+   
     FILE *fp;
     int n;
     char message[2048];
@@ -97,11 +78,11 @@ void shareFile(string filename, string torrent, char *ipaddress, int port, int s
     strcat(message, filename.c_str());
     strcat(message, "|");
     strcat(message, clientip.c_str());
+    message[100]='\n';
     n = send(socketid, message, 2048, 0);
     if (n < 0)
         printf("error in sending");
-    cout<<"mesage sent"<<message;
-   // close(socketid);
+    bzero(message,sizeof(message));
 }
 
 void removeFile(string torrentfile,char *ipaddress,int port, int socketid, string clientip)
@@ -191,6 +172,7 @@ int main(int argc, char *argv[])
             FILE *fptr = fopen(filename.c_str(), "r");
             if (fptr == NULL)
                 error("Invalid file name.");
+          
             thread t1(shareFile, filename, torrentfile, inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port), sockfd, client_ip);
             t1.detach();
         }
