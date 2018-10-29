@@ -8,7 +8,7 @@ Chunk size
 Not too big- because we have to send that over network, loss of large packet will be more costly.
 Not too small- no. of request will be too much.
 
-Client is multi-threaded,so that multiple requests can be handlded.
+Client is multi-threaded,so that multiple requests can be handled.
 
 Format of .mtorrent file:
 ● Tracker URL1: The url of the tracker server1, i.e. tracker1 IP & port
