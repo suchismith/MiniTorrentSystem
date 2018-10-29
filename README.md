@@ -3,13 +3,6 @@ A peer-to-peer file sharing system, based on the distributed architecture.
 Client requests a file, and portions of the requested file residing or peer machines are sent to the client, and then reassembled into a copy of the requested file.
 A special tracker server keeps track of which file is shared by which client.
 
-
-Minimalistic .mtorrent file.
-Terminologies
-Seeder
-Leecher
-Peer
-
 Design Decison
 Chunk size
 Not too big- because we have to send that over network, loss of large packet will be more costly.
